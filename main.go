@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"sort"
 	"sync"
 	"time"
 
@@ -85,18 +86,22 @@ func gui(server *server.SSH, events chan string) {
 	ui.Handle("q", func(ui.Event) {
 		ui.StopLoop()
 	})
+
 	go func() {
 		for {
 			renderLock.Lock()
 			s := server.State()
+			sort.Sort(SortByStarted(s.Connections))
 			list := make([]string, len(s.Connections))
+			activeBytes := 0
 			for i, item := range s.Connections {
-				list[i] = fmt.Sprintf("%s: %s bytes from %s", time.Now().Sub(item.Started), humanize.Bytes(uint64(item.BytesSent)), item.Remote)
+				list[i] = fmt.Sprintf("%11s: %7s: %s", time.Now().Sub(item.Started).Truncate(time.Second), humanize.Bytes(uint64(item.BytesSent)), item.Remote)
+				activeBytes += item.BytesSent
 			}
 			ls.Items = list
 			ls.BorderLabel = fmt.Sprintf("(%d) Active connections", len(list))
 
-			par.Text = fmt.Sprintf("Total conns: \t%d\nTotal bytes: \t%s", s.TotalConnections, humanize.Bytes(uint64(s.BytesSent)))
+			par.Text = fmt.Sprintf("Total conns: \t%d\nTotal bytes: \t%s", s.TotalConnections, humanize.Bytes(uint64(s.BytesSent+activeBytes)))
 			ui.Render(ui.Body)
 			renderLock.Unlock()
 
@@ -108,10 +113,11 @@ func gui(server *server.SSH, events chan string) {
 		for {
 			event := <-events
 			renderLock.Lock()
-			log.Items = append(log.Items, event)
+			log.Items = append([]string{event}, log.Items...)
 			renderLock.Unlock()
 		}
 	}()
+
 	ui.Handle("<Resize>", func(e ui.Event) {
 		payload := e.Payload.(ui.Resize)
 		ui.Body.Width = payload.Width
@@ -124,3 +130,9 @@ func gui(server *server.SSH, events chan string) {
 	})
 	ui.Loop()
 }
+
+type SortByStarted []server.Connection
+
+func (s SortByStarted) Len() int           { return len(s) }
+func (s SortByStarted) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s SortByStarted) Less(i, j int) bool { return s[i].Started.Before(s[j].Started) }

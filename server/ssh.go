@@ -112,7 +112,7 @@ func (s *SSH) acceptSSH(nConn net.Conn, config *ssh.ServerConfig) {
 	s.bytessent += stateConn.Written()
 	s.lock.Unlock()
 
-	s.Events <- fmt.Sprintf("Disconnect: %s, (%s) took %s bytes: %s", stateConn.Remote, time.Now().Sub(stateConn.Started), humanize.Bytes(uint64(stateConn.Written())), err)
+	s.Events <- fmt.Sprintf("Disconnect: %21s, (%s) received %s: %s", stateConn.Remote, time.Now().Sub(stateConn.Started).Truncate(time.Second), humanize.Bytes(uint64(stateConn.Written())), err)
 }
 
 func (s *SSH) preparebook(path string) error {
