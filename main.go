@@ -114,6 +114,10 @@ func gui(server *server.SSH, events chan string) {
 			event := <-events
 			renderLock.Lock()
 			log.Items = append([]string{event}, log.Items...)
+			// cap the log to 100 entries
+			if len(log.Items) >= 100 {
+				log.Items = log.Items[:100]
+			}
 			renderLock.Unlock()
 		}
 	}()
