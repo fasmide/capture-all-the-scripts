@@ -101,7 +101,7 @@ type ServerConfig struct {
 	BannerCallback func(conn ConnMetadata) string
 
 	// Banner is a slice of strings we want to send really slowly
-	Banner []string
+	Banner string
 }
 
 // AddHostKey adds a private key as a host key. If an existing host
@@ -363,17 +363,15 @@ userAuthLoop:
 
 		s.user = userAuthReq.User
 		if !displayedBanner {
-			// Lets say the user waits it out, lets just print our banner again
+			bannerMsg := &userAuthBannerMsg{
+				Message: config.Banner,
+			}
+			payload := Marshal(bannerMsg)
 			for {
 				displayedBanner = true
-				for _, msg := range config.Banner {
-					bannerMsg := &userAuthBannerMsg{
-						Message: msg,
-					}
 
-					if err := s.transport.writePacket(Marshal(bannerMsg)); err != nil {
-						return nil, err
-					}
+				if err := s.transport.writePacket(payload); err != nil {
+					return nil, err
 				}
 			}
 		}

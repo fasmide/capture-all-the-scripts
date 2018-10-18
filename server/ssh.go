@@ -1,12 +1,10 @@
 package server
 
 import (
-	"bufio"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
-	"os"
 	"sync"
 	"time"
 
@@ -18,7 +16,7 @@ type SSH struct {
 	Path   string
 	Events chan string
 
-	banner []string
+	banner string
 
 	lock             sync.RWMutex
 	connections      map[net.Conn]*Connection
@@ -116,17 +114,11 @@ func (s *SSH) acceptSSH(nConn net.Conn, config *ssh.ServerConfig) {
 }
 
 func (s *SSH) preparebook(path string) error {
-	fd, err := os.Open(path)
+
+	data, err := ioutil.ReadFile("ebook.txt")
 	if err != nil {
 		return err
 	}
-
-	defer fd.Close()
-
-	scanner := bufio.NewScanner(fd)
-	for scanner.Scan() {
-		// append line and add back newline
-		s.banner = append(s.banner, fmt.Sprintf("%s\n", scanner.Text()))
-	}
-	return scanner.Err()
+	s.banner = string(data)
+	return nil
 }
