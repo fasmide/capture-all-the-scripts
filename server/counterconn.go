@@ -13,7 +13,6 @@ type Connection struct {
 
 	Started   time.Time
 	SessionID string
-	BytesSent int
 	Remote    string
 
 	written int

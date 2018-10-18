@@ -36,7 +36,6 @@ func (s *SSH) State() State {
 
 	state := State{BytesSent: s.bytessent, TotalConnections: s.totalconnections}
 	for _, conn := range s.connections {
-		conn.BytesSent = conn.Written()
 		state.Connections = append(state.Connections, conn)
 	}
 	return state
@@ -109,8 +108,8 @@ func (s *SSH) acceptSSH(nConn net.Conn, config *ssh.ServerConfig) {
 	delete(s.connections, nConn)
 	s.bytessent += stateConn.Written()
 	s.lock.Unlock()
-
-	s.Events <- fmt.Sprintf("Disconnect: %21s, (%s) received %s: %s", stateConn.Remote, time.Now().Sub(stateConn.Started).Truncate(time.Second), humanize.Bytes(uint64(stateConn.Written())), err)
+	host, _, _ := net.SplitHostPort(stateConn.Remote)
+	s.Events <- fmt.Sprintf("%15s, %11s: %7s: %s", host, time.Now().Sub(stateConn.Started).Truncate(time.Second), humanize.Bytes(uint64(stateConn.Written())), err)
 }
 
 func (s *SSH) preparebook(path string) error {
