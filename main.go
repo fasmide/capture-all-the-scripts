@@ -123,6 +123,8 @@ func gui(server *server.SSH, events chan string) {
 	}()
 
 	ui.Handle("<Resize>", func(e ui.Event) {
+		renderLock.Lock()
+		defer renderLock.Unlock()
 		payload := e.Payload.(ui.Resize)
 		ui.Body.Width = payload.Width
 		height := payload.Height / 2
@@ -135,7 +137,7 @@ func gui(server *server.SSH, events chan string) {
 	ui.Loop()
 }
 
-type SortByStarted []server.Connection
+type SortByStarted []*server.Connection
 
 func (s SortByStarted) Len() int           { return len(s) }
 func (s SortByStarted) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }

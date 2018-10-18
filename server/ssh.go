@@ -27,7 +27,7 @@ type SSH struct {
 }
 
 type State struct {
-	Connections      []Connection
+	Connections      []*Connection
 	TotalConnections int
 	BytesSent        int
 }
@@ -39,7 +39,7 @@ func (s *SSH) State() State {
 	state := State{BytesSent: s.bytessent, TotalConnections: s.totalconnections}
 	for _, conn := range s.connections {
 		conn.BytesSent = conn.Written()
-		state.Connections = append(state.Connections, *conn)
+		state.Connections = append(state.Connections, conn)
 	}
 	return state
 }
