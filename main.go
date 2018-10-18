@@ -40,6 +40,11 @@ func main() {
 
 func gui(server *server.SSH, events chan string) {
 
+	started := time.Now()
+	// TODO: we should make sure items in this list are
+	// removed
+	lastWritten := make(map[string]int)
+
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
@@ -51,7 +56,8 @@ func gui(server *server.SSH, events chan string) {
 	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
 		log.Panicln(err)
 	}
-	started := time.Now()
+
+	// This goroutine refreshes state
 	go func() {
 		for {
 			s := server.State()
@@ -62,12 +68,22 @@ func gui(server *server.SSH, events chan string) {
 				activeConnView.Clear()
 				activeBytes := 0
 				for _, item := range s.Connections {
-					color.New(color.FgGreen).Fprintf(activeConnView, "%11s: %7s: %s\n",
+					written := item.Written()
+					perSecond := 0
+
+					if last, exists := lastWritten[item.Remote]; exists {
+						perSecond = written - last
+					}
+					lastWritten[item.Remote] = written
+
+					color.New(color.FgGreen).Fprintf(activeConnView, "%11s: %7s: %7s/sec %s\n",
 						time.Now().Sub(item.Started).Truncate(time.Second).String(),
-						humanize.Bytes(uint64(item.Written())),
+						humanize.Bytes(uint64(written)),
+						humanize.Bytes(uint64(perSecond*2)), // times two, as we update twice pr second
 						item.Remote,
 					)
-					activeBytes += item.Written()
+					activeBytes += written
+
 				}
 				activeConnView.Title = fmt.Sprintf("(%d) Active connections", len(s.Connections))
 				statsView.Clear()
@@ -84,6 +100,7 @@ func gui(server *server.SSH, events chan string) {
 		}
 	}()
 
+	// This goroutine receives events
 	go func() {
 		eventSlice := make([]string, 0, 50)
 		for {
@@ -103,6 +120,7 @@ func gui(server *server.SSH, events chan string) {
 		}
 	}()
 
+	// Gui Mainloop
 	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
 		log.Panicln(err)
 	}
