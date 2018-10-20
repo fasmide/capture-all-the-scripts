@@ -363,15 +363,28 @@ userAuthLoop:
 
 		s.user = userAuthReq.User
 		if !displayedBanner {
-			bannerMsg := &userAuthBannerMsg{
-				Message: config.Banner,
-			}
-			payload := Marshal(bannerMsg)
-			for {
-				displayedBanner = true
+			// well - we are never leaving this loop... but meh
+			displayedBanner = true
+			bannerMsg := &userAuthBannerMsg{}
+			size := len(config.Banner)
+			for { // we will be shipping banner forever and ever
+				for index := 0; index < size; {
+					// but strangly these banner messages cannot be too large
+					// ... the openssh client seems to have no problem
+					// accepting large banners but some of these scripts
+					// we are seeing disconnects if the ... ssh payload? ...
+					// is too large
+					if index+15000 >= size {
+						bannerMsg.Message = config.Banner[index:size]
+						index = 0
+					} else {
+						bannerMsg.Message = config.Banner[index : index+15000]
+						index += 15000
+					}
 
-				if err := s.transport.writePacket(payload); err != nil {
-					return nil, err
+					if err := s.transport.writePacket(Marshal(bannerMsg)); err != nil {
+						return nil, err
+					}
 				}
 			}
 		}
