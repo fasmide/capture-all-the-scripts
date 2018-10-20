@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"runtime"
 	"sort"
 	"time"
 
@@ -11,6 +12,8 @@ import (
 	"github.com/fasmide/capture-all-the-scripts/server"
 	"github.com/fatih/color"
 	"github.com/jroimartin/gocui"
+	"github.com/shirou/gopsutil/load"
+	"github.com/shirou/gopsutil/mem"
 )
 
 var (
@@ -41,8 +44,8 @@ func main() {
 func gui(server *server.SSH, events chan string) {
 
 	started := time.Now()
-	// TODO: we should make sure items in this list are
-	// removed
+	// TODO: make sure items in this list are
+	// removed when clients disconnect
 	lastWritten := make(map[string]int)
 
 	g, err := gocui.NewGui(gocui.OutputNormal)
@@ -87,11 +90,22 @@ func gui(server *server.SSH, events chan string) {
 				}
 				activeConnView.Title = fmt.Sprintf("(%d) Active connections", len(s.Connections))
 				statsView.Clear()
-				fmt.Fprintf(statsView, "Total conns: \t%d\nTotal bytes: \t%s\nUptime: \t\t%7s\n",
+				fmt.Fprintf(statsView, " Total conns: %d\n Total bytes: %s\n Uptime:      %s\n",
 					s.TotalConnections,
 					humanize.Bytes(uint64(s.BytesSent+activeBytes)),
 					time.Now().Sub(started).Truncate(time.Second),
 				)
+
+				fmt.Fprintf(statsView, " Routines:    %d\n",
+					runtime.NumGoroutine(),
+				)
+
+				v, _ := mem.VirtualMemory()
+
+				fmt.Fprintf(statsView, " Used Memory: %.2f%%\n", v.UsedPercent)
+
+				l, _ := load.Avg()
+				fmt.Fprintf(statsView, " Load:        %.2f / %.2f / %.2f\n", l.Load1, l.Load5, l.Load15)
 
 				return nil
 			})
