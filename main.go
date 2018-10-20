@@ -153,7 +153,7 @@ func layout(g *gocui.Gui) error {
 			return err
 		}
 
-		activeConnView.Wrap = true
+		activeConnView.Wrap = false
 		activeConnView.Title = "(%d) Active Connections"
 	}
 
