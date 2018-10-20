@@ -148,7 +148,7 @@ func quit(g *gocui.Gui, v *gocui.View) error {
 func layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
 	var err error
-	if activeConnView, err = g.SetView("activeconnections", 0, 0, maxX/2-1, maxY/2-1); err != nil {
+	if activeConnView, err = g.SetView("activeconnections", 0, 0, maxX-35, maxY/2-1); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
@@ -157,7 +157,7 @@ func layout(g *gocui.Gui) error {
 		activeConnView.Title = "(%d) Active Connections"
 	}
 
-	if statsView, err = g.SetView("stats", maxX/2-1, 0, maxX-1, maxY/2-1); err != nil {
+	if statsView, err = g.SetView("stats", maxX-35, 0, maxX-1, maxY/2-1); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
