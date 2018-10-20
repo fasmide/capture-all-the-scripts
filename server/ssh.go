@@ -75,8 +75,6 @@ func (s *SSH) Listen() {
 
 	config.AddHostKey(hostkey)
 
-	// Once a ServerConfig has been configured, connections can be
-	// accepted.
 	listener, err := net.Listen("tcp", s.Path)
 	if err != nil {
 		log.Fatal("failed to listen for connection: ", err)
@@ -86,6 +84,7 @@ func (s *SSH) Listen() {
 		nConn, err := listener.Accept()
 		if err != nil {
 			log.Fatal("failed to accept incoming connection: ", err)
+			continue
 		}
 		go s.acceptSSH(nConn, config)
 	}
