@@ -19,6 +19,10 @@ type Connection struct {
 }
 
 func (c *Connection) Write(b []byte) (int, error) {
+	err := c.Conn.SetWriteDeadline(time.Now().Add(time.Minute * 5))
+	if err != nil {
+		return 0, err
+	}
 	n, err := c.Conn.Write(b)
 	c.Lock()
 	c.written += n
