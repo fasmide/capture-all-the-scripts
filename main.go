@@ -68,6 +68,7 @@ func gui(server *server.SSH, events chan string) {
 
 			g.Update(func(g *gocui.Gui) error {
 
+				// update active connections
 				activeConnView.Clear()
 				activeBytes := 0
 				for _, item := range s.Connections {
@@ -89,6 +90,8 @@ func gui(server *server.SSH, events chan string) {
 
 				}
 				activeConnView.Title = fmt.Sprintf("(%d) Active connections", len(s.Connections))
+
+				// update stats
 				statsView.Clear()
 				fmt.Fprintf(statsView, " Total conns: %d\n Total bytes: %s\n Uptime:      %s\n",
 					s.TotalConnections,
