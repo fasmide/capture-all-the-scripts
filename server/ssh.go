@@ -49,7 +49,7 @@ func (s *SSH) Listen() {
 
 	err := s.preparebook("ebook.txt")
 	if err != nil {
-		panic(err)
+		log.Fatal("Failed to prepare book: ", err)
 	}
 
 	privateBytes, err := ioutil.ReadFile("id_rsa")
