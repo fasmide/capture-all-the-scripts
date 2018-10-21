@@ -22,6 +22,7 @@ go get github.com/fasmide/capture-all-the-scripts
 ssh-keygen
 
 # have some large text document, save it as ebook.txt
+# if you dont have anything available: curl http://norvig.com/big.txt > ebook.txt
 ./capture-all-the-scripts -port 22
 
 # if your planning on running this thing for long, use something like tmux
