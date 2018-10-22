@@ -98,8 +98,30 @@ func (s *SSH) acceptSSH(nConn net.Conn, config *ssh.ServerConfig) {
 	s.totalconnections++
 	s.connections[nConn] = &stateConn
 	s.lock.Unlock()
+	bannerStarted := make(chan bool)
 
-	_, _, _, err := ssh.NewServerConn(&stateConn, config)
+	var wg sync.WaitGroup
+	var err error
+	wg.Add(1)
+	go func() {
+		_, _, _, err = ssh.NewServerConn(&stateConn, config, bannerStarted)
+		wg.Done()
+	}()
+
+	wg.Add(1)
+	go func() {
+		// Timeout if the banner haven't started after
+		// 5 minuttes
+		select {
+		case <-bannerStarted:
+			close(bannerStarted)
+		case <-time.After(time.Minute * 5):
+			stateConn.Close()
+		}
+		wg.Done()
+	}()
+
+	wg.Wait()
 
 	stateConn.Close()
 

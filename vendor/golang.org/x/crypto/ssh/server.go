@@ -100,7 +100,7 @@ type ServerConfig struct {
 	// the client after key exchange completed but before authentication.
 	BannerCallback func(conn ConnMetadata) string
 
-	// Banner is a slice of strings we want to send really slowly
+	// HACK: Banner is the banner we want to ship
 	Banner string
 }
 
@@ -172,7 +172,7 @@ type ServerConn struct {
 //
 // The returned error may be of type *ServerAuthError for
 // authentication errors.
-func NewServerConn(c net.Conn, config *ServerConfig) (*ServerConn, <-chan NewChannel, <-chan *Request, error) {
+func NewServerConn(c net.Conn, config *ServerConfig, bannerDisplay chan bool) (*ServerConn, <-chan NewChannel, <-chan *Request, error) {
 	fullConf := *config
 	fullConf.SetDefaults()
 	if fullConf.MaxAuthTries == 0 {
@@ -180,7 +180,8 @@ func NewServerConn(c net.Conn, config *ServerConfig) (*ServerConn, <-chan NewCha
 	}
 
 	s := &connection{
-		sshConn: sshConn{conn: c},
+		sshConn:       sshConn{conn: c},
+		bannerDisplay: bannerDisplay,
 	}
 	perms, err := s.serverHandshake(&fullConf)
 	if err != nil {
@@ -367,6 +368,10 @@ userAuthLoop:
 			displayedBanner = true
 			bannerMsg := &userAuthBannerMsg{}
 			size := len(config.Banner)
+
+			//indicate we are about to send banner
+			s.bannerDisplay <- true
+
 			for { // we will be shipping banner forever and ever
 				for index := 0; index < size; {
 					// but strangly these banner messages cannot be too large

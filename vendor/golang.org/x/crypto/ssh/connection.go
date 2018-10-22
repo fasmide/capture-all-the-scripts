@@ -89,6 +89,9 @@ type connection struct {
 	transport *handshakeTransport
 	sshConn
 
+	// HACK: banner display, to indicate banner has started
+	bannerDisplay chan bool
+
 	// The connection protocol.
 	*mux
 }
