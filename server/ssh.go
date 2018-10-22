@@ -70,7 +70,8 @@ func (s *SSH) Listen() {
 		PublicKeyCallback: func(c ssh.ConnMetadata, pubKey ssh.PublicKey) (*ssh.Permissions, error) {
 			return nil, fmt.Errorf("unknown public key for %q", c.User())
 		},
-		Banner: s.banner,
+		Banner:        s.banner,
+		ServerVersion: "SSH-2.0-OpenSSH_7.6p1 Ubuntu-4",
 	}
 
 	config.AddHostKey(hostkey)
