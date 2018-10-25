@@ -2,3 +2,4 @@ ebook.txt
 id_rsa*
 capture-all-the-scripts
 errors.txt
+heapdump_*

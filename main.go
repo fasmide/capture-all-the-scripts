@@ -4,7 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"runtime"
+	"runtime/pprof"
 	"sort"
 	"time"
 
@@ -37,7 +39,27 @@ func main() {
 	go server.Listen()
 
 	log.Printf("listening on %s", listenPath)
+	go func() {
+		index := 0
+		for {
+			f, err := os.Create(fmt.Sprintf("heapdump_%d", index))
+			if err != nil {
+				log.Fatal("could not create memory profile: ", err)
+			}
+			runtime.GC() // get up-to-date statistics
+			if err := pprof.WriteHeapProfile(f); err != nil {
+				log.Fatal("could not write memory profile: ", err)
+			}
+			f.Close()
 
+			index++
+			if index >= 100 {
+				index = 0
+			}
+			time.Sleep(time.Second)
+
+		}
+	}()
 	gui(&server, eventChan)
 }
 
