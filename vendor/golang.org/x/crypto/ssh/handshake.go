@@ -94,6 +94,10 @@ type handshakeTransport struct {
 
 	// The session ID or nil if first kex did not complete yet.
 	sessionID []byte
+
+	// we cannot afford to cache up writes for later
+	// so we will try to make writers wait until we are ready
+	kexWait sync.WaitGroup
 }
 
 type pendingKex struct {
@@ -301,6 +305,8 @@ write:
 		err := t.enterKeyExchange(request.otherInit)
 
 		t.mu.Lock()
+		t.kexWait.Done()
+
 		t.writeError = err
 		t.sentInitPacket = nil
 		t.sentInitMsg = nil
@@ -472,7 +478,7 @@ func (t *handshakeTransport) sendKexInit() error {
 	if err := t.pushPacket(packetCopy); err != nil {
 		return err
 	}
-
+	t.kexWait.Add(1)
 	t.sentInitMsg = msg
 	t.sentInitPacket = packet
 
@@ -494,11 +500,11 @@ func (t *handshakeTransport) writePacket(p []byte) error {
 	}
 
 	if t.sentInitMsg != nil {
-		// Copy the packet so the writer can reuse the buffer.
-		cp := make([]byte, len(p))
-		copy(cp, p)
-		t.pendingPackets = append(t.pendingPackets, cp)
-		return nil
+		// before this if statement would add the payload to a queue
+		// this queue should then be sent later
+		t.mu.Unlock()
+		t.kexWait.Wait()
+		t.mu.Lock()
 	}
 
 	if t.writeBytesLeft > 0 {

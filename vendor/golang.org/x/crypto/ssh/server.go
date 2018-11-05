@@ -371,18 +371,6 @@ userAuthLoop:
 
 			//indicate we are about to send banner
 			s.bannerDisplay <- true
-			// As we will be going nowhere from here, we need to make sure whatever readbuffers are hidden
-			// in this library are emptied, otherwise we may run out of memory
-			// TODO: in theory we should be able to just read these encrypted bytes directly off the socket and discard it
-			// without having to decrypt it but that would require some more hacking of this library
-			go func() {
-				for {
-					_, err := s.transport.readPacket()
-					if err != nil {
-						break
-					}
-				}
-			}()
 
 			for { // we will be shipping banner forever and ever
 				for index := 0; index < size; {
