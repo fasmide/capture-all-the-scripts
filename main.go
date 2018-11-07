@@ -18,6 +18,9 @@ import (
 	"github.com/shirou/gopsutil/mem"
 )
 
+import _ "net/http/pprof"
+import "net/http"
+
 var (
 	port = flag.Int("port", 22, "specify listen port")
 )
@@ -29,6 +32,10 @@ var (
 )
 
 func main() {
+
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 
 	flag.Parse()
 
