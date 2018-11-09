@@ -305,7 +305,6 @@ write:
 		err := t.enterKeyExchange(request.otherInit)
 
 		t.mu.Lock()
-		t.kexWait.Done()
 
 		t.writeError = err
 		t.sentInitPacket = nil
@@ -344,6 +343,8 @@ write:
 		}
 		t.pendingPackets = t.pendingPackets[:0]
 		t.mu.Unlock()
+		log.Printf("hexWait.Done: %p", &t.kexWait)
+		t.kexWait.Done()
 	}
 
 	// drain startKex channel. We don't service t.requestKex
@@ -478,6 +479,7 @@ func (t *handshakeTransport) sendKexInit() error {
 	if err := t.pushPacket(packetCopy); err != nil {
 		return err
 	}
+	log.Printf("hexWait.Add: %p", &t.kexWait)
 	t.kexWait.Add(1)
 	t.sentInitMsg = msg
 	t.sentInitPacket = packet
@@ -503,7 +505,9 @@ func (t *handshakeTransport) writePacket(p []byte) error {
 		// before this if statement would add the payload to a queue
 		// this queue should then be sent later
 		t.mu.Unlock()
+		log.Printf("hexWait.Wait: %p", &t.kexWait)
 		t.kexWait.Wait()
+		log.Printf("hexWait.Wait over: %p", &t.kexWait)
 		t.mu.Lock()
 	}
 
